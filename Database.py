@@ -1,13 +1,20 @@
 # Database.py
+import os
+from dotenv import load_dotenv
+from pathlib import Path
 import psycopg2
 from datetime import datetime
 
+# Ruta absoluta al archivo credenciales.env
+dotenv_path = Path(__file__).resolve().parent / "credenciales.env"
+load_dotenv(dotenv_path=dotenv_path)
+
 def get_connection():
     return psycopg2.connect(
-        host="c9srcab37moub2.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com",
-        database="dc0tv34qmb4d30",
-        user="u8gijjt755tuos",
-        password="p1115078641aa9e1d0e34aefcbe5828c7d3771a171c6dcf200a1c426c6898b69a"
+        host=os.getenv("DB_HOST"),
+        database=os.getenv("DB_NAME"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD")
     )
 
 def guardar_resultado(id_matricula, id_emocion, probabilidad):
