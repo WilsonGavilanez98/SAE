@@ -81,3 +81,87 @@ def obtener_ultima_matricula(id_estudiante):
         cursor.close()
         conn.close()
 
+def obtener_estudiantes_alerta():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    query = """
+       WITH RESUMEN AS (SELECT 
+                        R.ID_MATRICULA,
+                        CONCAT(MA.APELLIDOS,' ',MA.NOMBRES) AS ESTUDIANTE,
+                        E.NOMBRE AS EMOCION,
+                        U.ID_PROFESOR,
+                        MAX(DATE(R.FECHA)) AS ULTIMA_FECHA,
+                        COUNT(DISTINCT DATE(R.FECHA)) AS DIAS
+                    FROM 
+                        RESULTADO R
+                    JOIN
+                        MATRICULA U ON R.ID_MATRICULA = U.ID_MATRICULA
+                    JOIN 
+                        ESTUDIANTES MA ON R.ID_MATRICULA = MA.ID_ESTUDIANTES
+                    JOIN 
+                        EMOCIONES E ON R.ID_EMOCION = E.ID_EMOCION
+                    WHERE UPPER
+                        (E.NOMBRE) IN ('TRISTE', 'ENOJADO', 'MIEDO')
+                    GROUP BY
+                        R.ID_MATRICULA,
+                        MA.APELLIDOS,
+                        MA.NOMBRES,
+                        E.NOMBRE,
+                        U.ID_PROFESOR
+                    ORDER BY 
+                        CONCAT(MA.APELLIDOS,' ',MA.NOMBRES)
+                    )
+                    SELECT 
+                            R.ID_MATRICULA,
+                            R.ESTUDIANTE,
+                            R.EMOCION,
+                            PO.EMAIL,
+                            R.ULTIMA_FECHA,
+                            R.DIAS
+                            FROM RESUMEN R
+                            JOIN 
+                                PROFESORES PO ON R.ID_PROFESOR = PO.ID_PROFESOR
+                            WHERE r.DIAS >= 3
+                            AND NOT EXISTS (
+                                SELECT 1 FROM alertas_enviadas ae
+                                WHERE ae.id_matricula = r.id_matricula
+                                AND ae.id_emocion = (SELECT id_emocion FROM emociones WHERE nombre = r.EMOCION)
+                                AND ae.ultima_fecha >= r.ultima_fecha
+    )"""
+    cursor.execute(query)
+    resultados = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return resultados
+
+
+def registrar_alerta(id_matricula, emocion, fecha):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    query = """
+        INSERT INTO alertas_enviadas (id_matricula, id_emocion, ultima_fecha)
+        VALUES (%s, (SELECT id_emocion FROM emociones WHERE nombre = %s), %s)
+    """
+
+    cursor.execute(query, (id_matricula, emocion, fecha))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+def obtener_estudiantes_con_fotos():
+    conn = get_connection()
+    cursor = conn.cursor()
+    query = """
+        SELECT CONCAT(nombres, ' ', apellidos) AS nombre_completo, foto
+        FROM estudiantes
+        WHERE foto IS NOT NULL
+    """
+    cursor.execute(query)
+    resultados = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return resultados
+
+

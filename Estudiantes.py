@@ -1,17 +1,26 @@
 import face_recognition
-import os
+import requests
+import numpy as np
+from PIL import Image
+import io
 
-def registrar_estudiantes(carpeta):
+def registrar_estudiantes_desde_urls(lista_estudiantes):
     encodings = {}
-    for filename in os.listdir(carpeta):
-        if filename.lower().endswith((".jpg", ".png")):
-            path = os.path.join(carpeta, filename)
-            image = face_recognition.load_image_file(path)
-            rostros = face_recognition.face_encodings(image)
+
+    for nombre, url in lista_estudiantes:
+        try:
+            print(f"🔄 Descargando imagen de: {nombre}")
+            response = requests.get(url)
+            image = Image.open(io.BytesIO(response.content)).convert('RGB')
+            image_np = np.array(image)
+
+            rostros = face_recognition.face_encodings(image_np)
             if rostros:
-                nombre = os.path.splitext(filename)[0]
                 encodings[nombre] = rostros[0]
                 print(f"✅ Registrado: {nombre}")
             else:
-                print(f"⚠️ No se detectó rostro en {filename}")
+                print(f"⚠️ No se detectó rostro en la imagen de {nombre}")
+        except Exception as e:
+            print(f"❌ Error con {nombre}: {e}")
+
     return encodings

@@ -91,7 +91,7 @@ def capturar_y_reconocer(estudiantes, intervalo):
             cv2.putText(frame, texto, (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
         cv2.imshow("Reconocimiento Facial + Emocion", frame)
-        cv2.resizeWindow("Reconocimiento Facial + Emocion", 800, 600)
+        cv2.resizeWindow("Reconocimiento Facial + Emocion", 1000, 800)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
